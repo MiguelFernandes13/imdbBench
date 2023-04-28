@@ -51,6 +51,25 @@ public class Workload {
         }
 
         /* newTitleToList */
+        
+        //SELECT COUNT(DISTINCT genre_id) as genre_id_distinct_count, COUNT(DISTINCT title_id) as title_id_distinct_count FROM titleGenre;
+        // Result:
+        //genre_id_distinct_count | title_id_distinct_count
+        //-------------------------+-------------------------
+        //                      28 |                 9327824
+        //create index on titleGenre using btree(title_id, genre_id); já existe
+
+        //SELECT COUNT(DISTINCT genre_id) as genre_id_distinct_count, COUNT(DISTINCT user_id) as user_id_distinct_count FROM userGenre;
+        // Result:
+        //genre_id_distinct_count | user_id_distinct_count
+        //-------------------------+------------------------
+        //                      28 |                 100000
+        //create index on userGenre using btree(user_id, genre_id); já existe
+
+        //create index on userList using hash(user_id); não utiliza, prefere btree
+        //create index on userHistory using hash(user_id); não utiliza, prefere btree
+        //nenhum dos indices acima melhorou o tempo de execucao
+        //user_id = '500' and '100000'
 
         this.getTitleFromPreference = c.prepareStatement("""
             select tg.title_id
@@ -71,6 +90,13 @@ public class Workload {
             limit 1;
         """);
 
+        // select count(distinct title_type) from title;
+        // Result: 11
+        // Como só existem 11 tipos de filmes
+        // create index on title using btree(start_year, title_type); (melhorou o tempo de execucao)
+        // create index on title using btree(start_year desc, title_type); obteve o melhor resultado
+
+        //user_id = '100000' and title_type = 'movie'
         this.getTitleFromType = c.prepareStatement("""
             select t.id
             from title t
@@ -91,6 +117,15 @@ public class Workload {
             limit 1;
         """);
 
+        //create index on userHistory using btree(last_seen);
+        //criei com hash e btree e escolheu btree
+        //create index on userHistory using btree(last_seen desc); obteve o melhor resultado
+        //create index on userhistory using hash(last_seen); para o group by porem nao utilizou
+
+        //create index on userhistory using btree(last_seen, title_id); melhorou
+        //por causa do index only scan backward
+        //create index on userhistory using btree(last_seen desc, title_id); obteve o melhor resultado
+        //user_id = '100000'
         this.getTitleFromPopular = c.prepareStatement("""
             select title_id
             from (
@@ -122,6 +157,7 @@ public class Workload {
 
         /* getWatchListInformation */
 
+        //create index on userList using btree(user_id); obtem melhor tempo de execucao
         this.getUserWatchList = c.prepareStatement("""
             select title_id, created_date
             from userList
@@ -135,6 +171,27 @@ public class Workload {
             where id = ?
         """);
 
+        //create index on titlePrincipals using hash(name_id);
+        //create index on titlePrincipals using hash(category_id);
+        //nestes dois indices de cima só existe um valor de cada, logo não faz sentido
+        //create index on name using hash(id); melhorou
+        //create index on category using hash(id); nao melhorou
+
+        //SELECT COUNT(DISTINCT title_id) as title_id_distinct_count, COUNT(DISTINCT name_id) as name_id_distinct_count FROM titlePrincipalsCharacters;
+        // Result:  
+        // title_id_distinct_count | name_id_distinct_count
+        //-------------------------+------------------------
+        //                 6985782 |                2880382
+        //
+        //Since the number of distinct title_id is much larger than the number of distinct name_id, we can use the composite index on (title_id, name_id) to speed up the query.
+        //create index on titlePrincipalsCharacters using btree(title_id, name_id); (já existe)
+        //get the title_id most frequent in titlePrincipal
+        //select title_id, count(*) from titlePrincipals group by title_id order by count(*) desc limit 1;
+        
+        //get the title_id most frequent in titlePrincipalCharacters
+        //select title_id, count(*) from titlePrincipalsCharacters group by title_id order by count(*) desc limit 1;
+        // Result:  tt0041024 |    30
+        // tt2872750
         this.getTitleMainCastAndCrew = c.prepareStatement("""
             select ordering, n.id, n.primary_name, c.name, pc.name
             from titlePrincipals p
@@ -145,12 +202,46 @@ public class Workload {
             order by ordering;
         """);
 
+        //create index on users using hash(id); (já existe)
+        //id = ' 100000'
         this.getUserRegion = c.prepareStatement("""
             select country_code
             from users
             where id = ?
         """);
 
+        //SELECT COUNT(DISTINCT title_id) as title_id_distinct_count, COUNT(DISTINCT region) as region_distinct_count FROM titleAkas;
+        // Result:
+        //title_id_distinct_count | region_distinct_count
+        //-------------------------+-----------------------
+        //                 7007800 |                   248
+        //Create index on titleAkas using btree(title_id, region);
+        //é um indice que nao vale a pena criar uma vez que o numero de regioes diferentes por title_id é muito pequeno
+        //logo o overhead criado pelo indice nao compensa
+
+        //select title_id, count(distinct region) from titleAkas group by title_id order by count(distinct region) desc limit 20;
+        //  title_id  | count
+        //------------+-------
+        // tt2872750  |   104
+        // tt1067106  |   101
+        // tt0088814  |    87
+        // tt0056869  |    86
+        // tt7014378  |    86
+        // tt8052676  |    83
+        // tt10687202 |    76
+        // tt10696784 |    75
+        // tt5113044  |    75
+        // tt0099785  |    74
+        // tt1430626  |    74
+        // tt0090605  |    73
+        // tt6751668  |    73
+        // tt14024906 |    73
+        // tt8185052  |    72
+        // tt15863594 |    71
+        // tt0068646  |    70
+        // tt6932874  |    69
+        // tt2850386  |    68
+        // tt0060196  |    68
         this.getTitleNameInRegion = c.prepareStatement("""
             select title
             from titleAkas
@@ -160,6 +251,11 @@ public class Workload {
 
         /* viewTitle */
 
+        //create index on userList using hash(title_id);
+        //create index on title using hash(id); (already created)
+        //create index on userList using hash(user_id);(already created)
+
+        //user_id = '100000' and 
         this.addTitleToHistory = c.prepareStatement("""
             with selected as (
                 select title_id, coalesce(runtime_minutes, 60) as runtime_minutes, user_id
@@ -180,6 +276,14 @@ public class Workload {
             returning title_id, duration_seen = (select runtime_minutes from selected);
         """);
 
+        //SELECT COUNT(DISTINCT title_id) as title_id_distinct_count, COUNT(DISTINCT user_id) as user_id_distinct_count FROM userList;
+        // Result:
+        //title_id_distinct_count | user_id_distinct_count
+        //-------------------------+------------------------
+        //                 3725553 |                 100000
+        //create index on userList using btree(title_id, user_id);
+
+        //select * from userlist where user_id ='29120' and title_id='tt0505891';
         this.removeTitleFromWatchList = c.prepareStatement("""
             delete from userList
             where user_id = ?
@@ -187,7 +291,14 @@ public class Workload {
         """);
 
         /* rateTitle */
-
+        //create index on userHistory using hash(user_id); (already created above)
+        //SELECT COUNT(DISTINCT title_id) as title_id_distinct_count, COUNT(DISTINCT user_id) as user_id_distinct_count FROM userHistory;
+        // Result: rever esta parte
+        //title_id_distinct_count | user_id_distinct_count
+        //-------------------------+------------------------
+        //                 4230816 |                 100000
+        //create index on userHistory using btree(title_id, user_id);
+        //user_id = '100000' and rating = '5'
         this.rateTitleFromHistory = c.prepareStatement("""
             with selected as (
                 select user_id, title_id
@@ -204,6 +315,8 @@ public class Workload {
             returning selected.title_id;
         """);
 
+        //create index on userHistory using hash(title_id); melhor resultado
+        //title_id = 'tt7973978'
         this.getTitleRating = c.prepareStatement("""
             select avg(rating)
             from userHistory
@@ -211,12 +324,20 @@ public class Workload {
         """);
 
         /* searchTitles */
-
+        //create materialized view titleBetween1980And2023 as select id, title_type, primary_title from title where start_year between 1980 and 2023;
+        //? = 'north'
+        //this.searchTitleByName = c.prepareStatement("""
+        //    select id, title_type, primary_title
+        //    from title
+        //    where to_tsvector('english', primary_title) @@ to_tsquery('english', ?)
+        //        and start_year between 1980 and 2023
+        //    limit 20;
+        //""");
+        //new query
         this.searchTitleByName = c.prepareStatement("""
             select id, title_type, primary_title
-            from title
+            from titleBetween1980And2023
             where to_tsvector('english', primary_title) @@ to_tsquery('english', ?)
-                and start_year between 1980 and 2023
             limit 20;
         """);
     }
