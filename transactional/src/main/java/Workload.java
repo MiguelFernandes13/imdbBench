@@ -68,9 +68,10 @@ public class Workload {
 
         //create index on userList using hash(user_id); não utiliza, prefere btree
         //create index on userHistory using hash(user_id); não utiliza, prefere btree
+
+        //create index on usergenre using hash (user_id ); melhorou o tempo de execucao passou de seq scan para index scan
         //nenhum dos indices acima melhorou o tempo de execucao
         //user_id = '500' and '100000'
-
         this.getTitleFromPreference = c.prepareStatement("""
             select tg.title_id
             from titleGenre tg
@@ -157,7 +158,8 @@ public class Workload {
 
         /* getWatchListInformation */
 
-        //create index on userList using btree(user_id); obtem melhor tempo de execucao
+        //create index on userList using btree(user_id); ja existe btree(user_id, title_id)
+        //user_id = '100000'
         this.getUserWatchList = c.prepareStatement("""
             select title_id, created_date
             from userList
@@ -165,15 +167,17 @@ public class Workload {
             order by created_date desc
         """);
 
+        //id = 'tt2386381'
+        //com hash obtem um resultado nao significativamente melhor logo nao compensa
         this.getTitleInfo = c.prepareStatement("""
             select primary_title, title_type, coalesce(runtime_minutes, 60), start_year
             from title
             where id = ?
         """);
 
-        //create index on titlePrincipals using hash(name_id);
-        //create index on titlePrincipals using hash(category_id);
-        //nestes dois indices de cima só existe um valor de cada, logo não faz sentido
+        //create index on titlePrincipals using hash(name_id); prefere o btree(title_id, ordering)
+        //create index on titlePrincipals using hash(category_id); prefere o btree(category_id)
+        //create index on titlePrincipalsCharacters using hash(name_id); prefere o btree(title_id, name_id, name)
         //create index on name using hash(id); melhorou
         //create index on category using hash(id); nao melhorou
 
@@ -192,6 +196,8 @@ public class Workload {
         //select title_id, count(*) from titlePrincipalsCharacters group by title_id order by count(*) desc limit 1;
         // Result:  tt0041024 |    30
         // tt2872750
+
+        //Foi removido o ordering do select uma vez que nao é necessario
         this.getTitleMainCastAndCrew = c.prepareStatement("""
             select ordering, n.id, n.primary_name, c.name, pc.name
             from titlePrincipals p
@@ -251,11 +257,11 @@ public class Workload {
 
         /* viewTitle */
 
-        //create index on userList using hash(title_id);
+        //create index on userList using hash(title_id); 
         //create index on title using hash(id); (already created)
-        //create index on userList using hash(user_id);(already created)
+        //create index on userList using hash(user_id); prefere o btree(user_id, title_id)
 
-        //user_id = '100000' and 
+        //user_id = '100000' and least = 20
         this.addTitleToHistory = c.prepareStatement("""
             with selected as (
                 select title_id, coalesce(runtime_minutes, 60) as runtime_minutes, user_id
@@ -291,7 +297,7 @@ public class Workload {
         """);
 
         /* rateTitle */
-        //create index on userHistory using hash(user_id); (already created above)
+        //create index on userHistory using hash(user_id); prefere o btree(user_id, title_id)
         //SELECT COUNT(DISTINCT title_id) as title_id_distinct_count, COUNT(DISTINCT user_id) as user_id_distinct_count FROM userHistory;
         // Result: rever esta parte
         //title_id_distinct_count | user_id_distinct_count
@@ -315,7 +321,7 @@ public class Workload {
             returning selected.title_id;
         """);
 
-        //create index on userHistory using hash(title_id); melhor resultado
+        //create index on userHistory using hash(title_id); prefere o btree(user_id, title_id)
         //title_id = 'tt7973978'
         this.getTitleRating = c.prepareStatement("""
             select avg(rating)
@@ -365,7 +371,7 @@ public class Workload {
             }
         };
         rs.next();
-        String titleId = rs.getString(1);
+        String titleId = rs.getString(1); //error here
 
         this.addTitleToUserList.setInt(1, userId);
         this.addTitleToUserList.setString(2, titleId);
@@ -394,19 +400,19 @@ public class Workload {
             titleInfo.startYear = infoRs.getInt(4);
 
             // people
-            titleInfo.castAndCrew = new HashMap<>();
+            titleInfo.castAndCrew = new HashMap<>(); //retira ordering de getTitleMainCastAndCrew uma vez que não é utilizado
             this.getTitleMainCastAndCrew.setString(1, titleId);
             var peopleRs = this.getTitleMainCastAndCrew.executeQuery();
             while (peopleRs.next()) {
-                String personId = peopleRs.getString(2);
+                String personId = peopleRs.getString(1);
                 if (!titleInfo.castAndCrew.containsKey(personId)) {
                     var p = new Person();
-                    p.name = peopleRs.getString(3);
-                    p.job = peopleRs.getString(4);
+                    p.name = peopleRs.getString(2);
+                    p.job = peopleRs.getString(3);
                     p.characters = new ArrayList<>();
                     titleInfo.castAndCrew.put(personId, p);
                 }
-                titleInfo.castAndCrew.get(personId).characters.add(peopleRs.getString(5));
+                titleInfo.castAndCrew.get(personId).characters.add(peopleRs.getString(4));
             }
 
             // title in region
