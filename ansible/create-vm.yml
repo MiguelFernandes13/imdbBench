@@ -1,0 +1,8 @@
+---
+# Playbook to create and config VM
+
+- name: Create and config VM
+  hosts: localhost
+  gather_facts: no
+  roles:
+      - create_vm

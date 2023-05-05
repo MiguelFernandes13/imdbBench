@@ -1,0 +1,17 @@
+---
+all:
+ vars:
+
+  gcp_project: abd-2223             # ID of GCP Project
+  gcp_auth_kind: serviceaccount            # Do not change
+  gcp_cred_file: "/media/mariana/DATA/MIEi/4_ano/SEMESTRE2/ABD/abd-2223-25c8ee0f085c.json"    # Path to service account keys (json file downloaded from GCP)
+
+
+# VM config
+  machine_type: "e2-custom-8-16384"
+  boot_disk_image: "projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20230429"
+  boot_disk_size_gb: "500"
+  boot_disk_type: "pd-ssd"
+  zone: "us-central1-a"
+  region: "us-central1"
+  service_account: "720651073215-compute@developer.gserviceaccount.com"

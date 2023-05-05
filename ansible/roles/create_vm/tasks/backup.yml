@@ -1,0 +1,54 @@
+- name: Create private IP address to the VM instance
+  gcp_compute_address:
+    name: "{{ zone }}-ip"
+    region: "{{ region }}"
+    project: "{{ gcp_project }}"
+    service_account_file: "{{ gcp_cred_file }}"
+    auth_kind: "{{ gcp_auth_kind }}"
+  register: gce_ip
+
+- name: Create instance with gcp_compute_instance module
+  gcp_compute_instance:
+    name: my-instance
+    machine_type: e2-custom-4-8192
+    network_interfaces:
+      - access_configs:
+        - name: External NAT
+          nat_ip: "{{ gce_ip }}"
+          type: ONE_TO_ONE_NAT
+    disks:
+      - initialize_params:
+          source_image: "{{ boot_disk_image }}"
+          disk_size_gb: "{{ boot_disk_size_gb }}"
+          disk_type: "{{ boot_disk_type }}"
+        auto_delete: true
+        boot: true
+        device_name: my-instance
+    zone: "{{ zone }}"
+    project: "{{ gcp_project }}"
+    scopes:
+      - https://www.googleapis.com/auth/devstorage.read_only
+      - https://www.googleapis.com/auth/logging.write
+      - https://www.googleapis.com/auth/monitoring.write
+      - https://www.googleapis.com/auth/servicecontrol
+      - https://www.googleapis.com/auth/service.management.readonly
+      - https://www.googleapis.com/auth/trace.append
+      - https://www.googleapis.com/auth/compute
+      - https://www.googleapis.com/auth/cloud-platform
+    scheduling:
+      on_host_maintenance: TERMINATE
+      automatic_restart: false
+      preemptible: true
+    provisioning_model: "{{ availability_policy }}"
+    metadata:
+      items:
+        - key: ec-src
+          value: vm_add-gcloud
+    labels:
+      ec-src: vm_add-gcloud
+    shielded_instance_config:
+      enable_secure_boot: false
+      enable_vtpm: true
+      enable_integrity_monitoring: true
+    auth_kind: "{{ gcp_auth_kind }}"
+    service_account_file: "{{ gcp_cred_file }}"

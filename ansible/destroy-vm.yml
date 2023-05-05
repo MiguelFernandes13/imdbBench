@@ -1,0 +1,8 @@
+---
+# Playbook to destroy VM
+
+- name: Destroy VM
+  hosts: localhost
+  gather_facts: no
+  roles:
+      - destroy_vm
