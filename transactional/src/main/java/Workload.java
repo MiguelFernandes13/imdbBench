@@ -370,13 +370,14 @@ public class Workload {
                 yield this.getTitleFromPopular.executeQuery();
             }
         };
-        rs.next();
-        String titleId = rs.getString(1); //error here
-
-        this.addTitleToUserList.setInt(1, userId);
-        this.addTitleToUserList.setString(2, titleId);
-        this.addTitleToUserList.executeUpdate();
-        this.conn.commit();
+        if (rs.next()){
+            String titleId = rs.getString(1); //error here
+            
+            this.addTitleToUserList.setInt(1, userId);
+            this.addTitleToUserList.setString(2, titleId);
+            this.addTitleToUserList.executeUpdate();
+            this.conn.commit();
+        }
     }
 
 
