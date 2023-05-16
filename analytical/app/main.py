@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession, DataFrame, Row
 from pyspark.sql import functions as F
-from pyspark.sql.functions import count, col, spark_partition_id, lower, udf, broadcast, avg, rank, collect_list, current_timestamp, date_sub
+from pyspark.sql.functions import count, col, spark_partition_id, lower, udf, broadcast, avg, rank, collect_list, current_timestamp, date_sub, year
 from pyspark.sql.window import Window
 from pyspark.sql.types import StringType
 
@@ -92,25 +92,45 @@ users = spark.read.parquet(f"gs://{BUCKET_NAME}/users.parquet")
 #    .show()
 
 #2.sql
-title.alias("t") \
-    .join(titleEpisode, col("t.id") == titleEpisode["parent_title_id"]) \
-    .join(title.alias("t2"), col("t2.id") == titleEpisode["title_id"]) \
-    .join(userHistory, userHistory["title_id"] == col("t2.id")) \
-    .join(users, users["id"] == userHistory["user_id"]) \
-    .join((titleGenre.join(genre, genre["id"] == titleGenre["genre_id"]) \
-                    .groupBy(titleGenre["title_id"]) \
-                    .select(titleGenre["title_id"], agg(collect_list(genre["name"])).alias("genres"))).alias("tg"), \
-                title["id"] == tg["title_id"]) \
-    .where(title["title_type"] == "tvSeries") \
-    .where(userHistory["last_seen"].between(current_timestamp(), date_sub(current_timestamp(), 30))) \
-    .filter(titleEpisode["season_number"].isNotNull()) \
-    .filter(~users["country_code"].isin("US", "GB")) \
-    .groupBy(title["id"], title["primary_title"], tg["genres"], titleEpisode["season_number"]) \
-    .orderBy(count("*").desc(), title["id"]) \
-    .select(title["id"], title["primary_title"], tg["genres"], titleEpisode["season_number"], count("*").alias("views")) \
+#title.alias("t") \
+#    .join(titleEpisode.alias("te"), col("t.id") == col("te.parent_title_id")) \
+#    .join(title.alias("t2"), col("t2.id") == col("te.title_id")) \
+#    .join(userHistory.alias("uh"), col("uh.title_id") == col("t2.id")) \
+#    .join(users.alias("u"), col("u.id") == col("uh.user_id")) \
+#    .join((titleGenre.alias("tg").join(genre.alias("g"), col("g.id") == col("tg.genre_id")) \
+#                    .select(col("tg.title_id"), col("g.name")) \
+#                    .groupBy(col("tg.title_id")) \
+#                    .agg(collect_list(col("g.name")).alias("genres"))).alias("tg"), \
+#                col("t.id") == col("tg.title_id")) \
+#    .where(title["title_type"] == "tvSeries") \
+#    .where(userHistory["last_seen"].between(current_timestamp(), date_sub(current_timestamp(), 30))) \
+#    .filter(titleEpisode["season_number"].isNotNull()) \
+#    .filter(~users["country_code"].isin("US", "GB")) \
+#    .select(title["id"], title["primary_title"], col("tg.genres"), titleEpisode["season_number"], count("*").alias("views")) \
+#    .groupBy(title["id"], title["primary_title"], col("tg.genres"), titleEpisode["season_number"]) \
+#    .orderBy(count("*").desc(), title["id"]) \
+#    .limit(100) \
+#    .show()
+                    
+#3.sql
+name.alias("n") \
+    .join(titlePrincipals.alias("tp"), col("tp.name_id") == col("n.id")) \
+    .join(titlePrincipalsCharacters.alias("tpc"), (col("tpc.title_id") == col("tp.title_id")) & (col("tpc.name_id") == col("tp.name_id"))) \
+    .join(category.alias("c"), col("c.id") == col("tp.category_id")) \
+    .join(title.alias("t"), col("t.id") == col("tp.title_id")) \
+    .join(titleEpisode.alias("te"), col("te.title_id") == col("tp.title_id"), "left") \
+    .where(col("t.start_year") >= year(date_sub(current_timestamp(), 10))) \
+    .where(col("c.name") == "actress") \
+    .filter(col("n.death_year").isNull()) \
+    .filter(col("t.title_type").isin("movie", "tvSeries", "tvMiniSeries", "tvMovie")) \
+    .filter(col("te.title_id").isNull()) \
+    .select(col("n.id"), col("n.primary_name"), year(date_sub(current_timestamp(), col("n.birth_year"))).alias("age")) \
+    .groupBy(col("n.id")) \
+    .agg(count("*").alias("roles")) \
+    .orderBy(col("roles").desc()) \
     .limit(100) \
     .show()
-                    
+    
                         
 
     
