@@ -1,0 +1,2520 @@
+--------------------Running 1 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+SearchTitles = 0.44379886836570037
+RateTitle = 0.0064081509827321565
+ViewTitle = 0.00720398309157694
+AddNewTitleToList = 0.03601870221148825
+GetWatchListInformation = 0.12272551552698696
+
+Overall metrics
+---------------
+throughput (txn/s) = 178.044
+response time (s) = 0.08984749360137943
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |    9
+ tt0090756  | Blue Velvet                    |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 19.028413306
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |   641
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |   623
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   490
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   481
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   468
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   464
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   450
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   431
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   429
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   414
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   401
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   390
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   372
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   367
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   356
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   355
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   349
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   347
+ tt0484535  | Saksi                           | {News}                       |             1 |   344
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   340
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   332
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   326
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   326
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   284
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   279
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   273
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   268
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   253
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   250
+ tt0194599  | Bobino                          | {Family}                     |             1 |   247
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   233
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   231
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   226
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   226
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   224
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   222
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   216
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   211
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   207
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   202
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   200
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   200
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   198
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   198
+ tt0401937  | Generations                     | {Drama}                      |             1 |   195
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   193
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   193
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   191
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   191
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   191
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   190
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   187
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   179
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   178
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   176
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   171
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   170
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   164
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   161
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   158
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   155
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   154
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   149
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   149
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   147
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   146
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   144
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   144
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   144
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   142
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   140
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   140
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   139
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   139
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   138
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   138
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   138
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   134
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   133
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   132
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   131
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   131
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   131
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   130
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   128
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   124
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   122
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   119
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   113
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   113
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   112
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   111
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   111
+ tt0046583  | The Brighter Day                | {Drama}                      |             1 |   110
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   110
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   107
+ tt12176850 | Chandralekha                    | {Drama}                      |             1 |   106
+ tt1863997  | Saath Nibhana Saathiya          | {Drama,Family}               |             1 |   106
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   103
+ tt0183068  | Family Affairs                  | {Drama}                      |             1 |   102
+(100 rows)
+
+2.sql: 26.370725192
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 123.912944893
+--------------------Running 2 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+SearchTitles = 0.4467026903245195
+RateTitle = 0.006388036440658499
+AddNewTitleToList = 0.03227686304978953
+GetWatchListInformation = 0.12762176110126225
+ViewTitle = 0.006805543765905889
+
+Overall metrics
+---------------
+throughput (txn/s) = 177.212
+response time (s) = 0.09028922420161163
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |    9
+ tt0090946  | Wild Wind                      |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 20.287569565
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |   715
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |   667
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   541
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   527
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   510
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   502
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   491
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   473
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   469
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   456
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   447
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   417
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   398
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   397
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   387
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   386
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   383
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   376
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   375
+ tt0484535  | Saksi                           | {News}                       |             1 |   374
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   356
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   354
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   354
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   310
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   308
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   303
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   286
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   282
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   272
+ tt0194599  | Bobino                          | {Family}                     |             1 |   264
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   250
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   249
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   247
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   246
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   242
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   242
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   230
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   230
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   222
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   215
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   214
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   213
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   212
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   211
+ tt0401937  | Generations                     | {Drama}                      |             1 |   211
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   211
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   211
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   210
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   208
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   207
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   204
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   204
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   195
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   190
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   188
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   186
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   183
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   182
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   175
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   173
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   170
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   168
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   161
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   159
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   159
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   158
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   158
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   158
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   157
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   156
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   156
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   154
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   152
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   151
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   149
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   148
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   147
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   147
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   146
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   144
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   144
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   143
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   142
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   141
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   140
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   136
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   136
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   134
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   129
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   124
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   122
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   121
+ tt0353044  | Le Bébête Show                  | {Comedy}                     |             1 |   121
+ tt0046583  | The Brighter Day                | {Drama}                      |             1 |   118
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   118
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   117
+ tt12176850 | Chandralekha                    | {Drama}                      |             1 |   116
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   115
+ tt1863997  | Saath Nibhana Saathiya          | {Drama,Family}               |             1 |   112
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   111
+(100 rows)
+
+2.sql: 33.264011364
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 127.280745028
+--------------------Running 3 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+GetWatchListInformation = 0.1293464989469618
+AddNewTitleToList = 0.02305786425763853
+RateTitle = 0.00658069544460501
+ViewTitle = 0.0069253638245696005
+SearchTitles = 0.19175490520657276
+
+Overall metrics
+---------------
+throughput (txn/s) = 277.998
+response time (s) = 0.05755103851849294
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |    9
+ tt0090946  | Wild Wind                      |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 17.268212725
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |   798
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |   745
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   620
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   604
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   577
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   563
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   545
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   532
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   530
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   513
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   501
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   463
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   452
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   447
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   445
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   435
+ tt0484535  | Saksi                           | {News}                       |             1 |   431
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   426
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   422
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   420
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   402
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   397
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   391
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   357
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   343
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   342
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   333
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   319
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   304
+ tt0194599  | Bobino                          | {Family}                     |             1 |   296
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   294
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   286
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   277
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   277
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   267
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   265
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   251
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   250
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   245
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   240
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   238
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   238
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   238
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   237
+ tt0401937  | Generations                     | {Drama}                      |             1 |   235
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   235
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   234
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   232
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   229
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   226
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   225
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   222
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   219
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   215
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   212
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   202
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   200
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   200
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   198
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   191
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   187
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   183
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   182
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   182
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   180
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   180
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   178
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   178
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   177
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   176
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   176
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   173
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   173
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   165
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   165
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   164
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   164
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   164
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   163
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   161
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   160
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   160
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   159
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   155
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   155
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   152
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   151
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   145
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   140
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   138
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   138
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   136
+ tt0353044  | Le Bébête Show                  | {Comedy}                     |             1 |   135
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   135
+ tt12176850 | Chandralekha                    | {Drama}                      |             1 |   132
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   132
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   131
+ tt0046583  | The Brighter Day                | {Drama}                      |             1 |   129
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   129
+ tt0118366  | Jô Soares Onze e Meia           | {Talk-Show}                  |             1 |   128
+(100 rows)
+
+2.sql: 33.262128178
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 144.942918128
+--------------------Running 4 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.022097111002571567
+GetWatchListInformation = 0.1335690730029263
+ViewTitle = 0.006735269700727466
+SearchTitles = 0.17650743042017555
+RateTitle = 0.006459993870077812
+
+Overall metrics
+---------------
+throughput (txn/s) = 283.11
+response time (s) = 0.05651030082779132
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0085642  | Hanna K.                       |   1980 | 4.3333333333333333 |    9
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 19.760180036
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |   898
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |   825
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   690
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   683
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   643
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   624
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   605
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   586
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   574
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   560
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   553
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   518
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   502
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   495
+ tt0484535  | Saksi                           | {News}                       |             1 |   493
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   490
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   487
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   476
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   464
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   462
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   447
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   446
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   433
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   398
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   394
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   378
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   376
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   354
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   332
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   324
+ tt0194599  | Bobino                          | {Family}                     |             1 |   324
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   323
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   307
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   305
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   294
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   292
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   285
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   279
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   272
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   270
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   266
+ tt0401937  | Generations                     | {Drama}                      |             1 |   265
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   263
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   261
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   260
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   258
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   256
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   255
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   253
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   253
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   249
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   248
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   239
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   238
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   225
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   224
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   220
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   219
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   216
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   216
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   210
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   204
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   203
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   202
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   201
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   197
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   195
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   195
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   193
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   192
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   190
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   189
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   187
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   187
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   186
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   185
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   182
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   182
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   180
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   179
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   176
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   176
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   173
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   172
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   169
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   168
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   164
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   160
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   154
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   152
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   152
+ tt0353044  | Le Bébête Show                  | {Comedy}                     |             1 |   151
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   150
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   149
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   147
+ tt12176850 | Chandralekha                    | {Drama}                      |             1 |   144
+ tt0046583  | The Brighter Day                | {Drama}                      |             1 |   143
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   143
+ tt0118366  | Jô Soares Onze e Meia           | {Talk-Show}                  |             1 |   142
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   141
+(100 rows)
+
+2.sql: 28.208186551
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 144.678869001
+--------------------Running 5 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+SearchTitles = 0.17226431088744193
+GetWatchListInformation = 0.14556951500275006
+RateTitle = 0.006650433586223862
+AddNewTitleToList = 0.023509130414405496
+ViewTitle = 0.006828586539820761
+
+Overall metrics
+---------------
+throughput (txn/s) = 274.326
+response time (s) = 0.058313523714704406
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0085642  | Hanna K.                       |   1980 | 4.3333333333333333 |    9
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 19.184083630
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |  1005
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |   920
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   751
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   738
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   704
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   700
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   666
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   643
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   637
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   624
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   595
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   574
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   555
+ tt0484535  | Saksi                           | {News}                       |             1 |   553
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   539
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   538
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   535
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   518
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   502
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   501
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   489
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   487
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   474
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   437
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   433
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   413
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   410
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   386
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   370
+ tt0194599  | Bobino                          | {Family}                     |             1 |   354
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   351
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   350
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   334
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   333
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   320
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   317
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   310
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   301
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   299
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   298
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   292
+ tt0401937  | Generations                     | {Drama}                      |             1 |   289
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   289
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   286
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   285
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   282
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   278
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   278
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   276
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   274
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   272
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   267
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   265
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   262
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   245
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   243
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   242
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   240
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   239
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   234
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   228
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   226
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   224
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   223
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   221
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   220
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   219
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   215
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   208
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   208
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   206
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   205
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   203
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   202
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   201
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   199
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   197
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   195
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   195
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   192
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   191
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   189
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   187
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   187
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   187
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   179
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   179
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   175
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   174
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   173
+ tt0353044  | Le Bébête Show                  | {Comedy}                     |             1 |   169
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   168
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   165
+ tt12176850 | Chandralekha                    | {Drama}                      |             1 |   160
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   160
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   158
+ tt0118366  | Jô Soares Onze e Meia           | {Talk-Show}                  |             1 |   156
+ tt0183068  | Family Affairs                  | {Drama}                      |             1 |   153
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   153
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   152
+(100 rows)
+
+2.sql: 32.155348857
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 112.465882378
+--------------------Running 6 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+GetWatchListInformation = 0.14107693540391836
+ViewTitle = 0.0063944708447227
+SearchTitles = 0.17264816061832608
+RateTitle = 0.006328686974994102
+AddNewTitleToList = 0.02236612988853917
+
+Overall metrics
+---------------
+throughput (txn/s) = 279.974
+response time (s) = 0.057163109963946655
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0085642  | Hanna K.                       |   1980 | 4.3333333333333333 |    9
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 18.945861563
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |  1085
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |   998
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   825
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   811
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   760
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   753
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   733
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   693
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   692
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   671
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   652
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   615
+ tt0484535  | Saksi                           | {News}                       |             1 |   609
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   607
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   596
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   580
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   578
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   572
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   543
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   542
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   534
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   533
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   512
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   487
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   472
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   452
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   438
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   407
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   401
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   393
+ tt0194599  | Bobino                          | {Family}                     |             1 |   384
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   381
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   356
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   355
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   347
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   345
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   337
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   330
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   324
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   324
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   323
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   320
+ tt0401937  | Generations                     | {Drama}                      |             1 |   319
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   315
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   312
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   310
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   310
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   306
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   297
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   295
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   294
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   293
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   286
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   285
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   265
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   263
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   262
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   258
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   258
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   255
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   253
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   249
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   244
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   243
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   239
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   236
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   234
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   231
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   228
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   228
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   223
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   222
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   222
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   221
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   220
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   219
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   213
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   211
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   210
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   208
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   208
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   208
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   204
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   203
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   201
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   192
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   189
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   189
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   187
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   186
+ tt0353044  | Le Bébête Show                  | {Comedy}                     |             1 |   184
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   180
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   179
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   179
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   173
+ tt1863997  | Saath Nibhana Saathiya          | {Drama,Family}               |             1 |   173
+ tt12176850 | Chandralekha                    | {Drama}                      |             1 |   169
+ tt0183068  | Family Affairs                  | {Drama}                      |             1 |   168
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   168
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   166
+(100 rows)
+
+2.sql: 26.847378593
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 103.593070125
+--------------------Running 7 shared_buffers --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.02149402222400562
+GetWatchListInformation = 0.13663308400559465
+RateTitle = 0.006212386944108058
+ViewTitle = 0.006282766197377369
+SearchTitles = 0.1729771480767974
+
+Overall metrics
+---------------
+throughput (txn/s) = 285.544
+response time (s) = 0.05602549715743283
+abort rate (%) = 0.0
+SELECT *
+FROM (
+    SELECT t.id,
+        left(t.primary_title, 30),
+        ((start_year / 10) * 10)::int AS decade,
+        avg(uh.rating) AS rating,
+        rank() over (
+            PARTITION by ((start_year / 10) * 10) :: int
+            ORDER BY avg(uh.rating) DESC, t.id
+        ) AS rank
+    FROM title t
+    JOIN userHistory uh ON uh.title_id = t.id
+    WHERE t.title_type = 'movie'
+        AND ((start_year / 10) * 10)::int >= 1980
+        AND t.id IN (
+            SELECT title_id
+            FROM titleGenre tg
+            JOIN genre g ON g.id = tg.genre_id
+            WHERE g.name IN (
+                'Drama'
+            )
+        )
+        AND t.id IN (
+            SELECT title_id
+            FROM titleAkas
+            WHERE region IN (
+                'US', 'GB', 'ES', 'DE', 'FR', 'PT'
+            )
+        )
+    GROUP BY t.id
+    HAVING count(uh.rating) >= 3
+    ORDER BY decade, rating DESC
+) t_
+WHERE rank <= 10;
+     id     |              left              | decade |       rating       | rank 
+------------+--------------------------------+--------+--------------------+------
+ tt0083773  | Crystal Gazing                 |   1980 | 5.0000000000000000 |    1
+ tt0088009  | A Year of the Quiet Sun        |   1980 | 5.0000000000000000 |    2
+ tt0080031  | Tom Horn                       |   1980 | 4.6666666666666667 |    3
+ tt0086066  | The Outsiders                  |   1980 | 4.6666666666666667 |    4
+ tt0087515  | The Judge                      |   1980 | 4.6666666666666667 |    5
+ tt0090310  | Wetherby                       |   1980 | 4.6666666666666667 |    6
+ tt0093117  | Tadpole and the Whale          |   1980 | 4.6666666666666667 |    7
+ tt0084630  | Satte Pe Satta                 |   1980 | 4.3333333333333333 |    8
+ tt0085642  | Hanna K.                       |   1980 | 4.3333333333333333 |    9
+ tt0087817  | Nothing Lasts Forever          |   1980 | 4.3333333333333333 |   10
+ tt0110320  | Lefteris                       |   1990 | 5.0000000000000000 |    1
+ tt0107486  | A magzat                       |   1990 | 4.7500000000000000 |    2
+ tt0115742  | Boys                           |   1990 | 4.6666666666666667 |    3
+ tt12327018 | Sweet Grass                    |   1990 | 4.6666666666666667 |    4
+ tt0106851  | Eye of the Stranger            |   1990 | 4.3333333333333333 |    5
+ tt0109532  | Dangerous Indiscretion         |   1990 | 4.3333333333333333 |    6
+ tt0109549  | Dark Summer                    |   1990 | 4.3333333333333333 |    7
+ tt0114042  | One Night Stand                |   1990 | 4.3333333333333333 |    8
+ tt0118571  | Air Force One                  |   1990 | 4.3333333333333333 |    9
+ tt0144178  | Dreaming of Joseph Lees        |   1990 | 4.3333333333333333 |   10
+ tt12604298 | Morning Glory                  |   2000 | 5.0000000000000000 |    1
+ tt3069604  | A Shared Life                  |   2000 | 5.0000000000000000 |    2
+ tt0215516  | Nobody's Baby                  |   2000 | 4.6666666666666667 |    3
+ tt0326769  | Biker Boyz                     |   2000 | 4.6666666666666667 |    4
+ tt0410403  | Only the Brave                 |   2000 | 4.6666666666666667 |    5
+ tt0940723  | Linkeroever                    |   2000 | 4.6666666666666667 |    6
+ tt1043577  | Unni, Another Story of an Indi |   2000 | 4.6666666666666667 |    7
+ tt1223932  | Time of Peace                  |   2000 | 4.6666666666666667 |    8
+ tt1297928  | Everything Strange and New     |   2000 | 4.6666666666666667 |    9
+ tt1433527  | Jack Squad                     |   2000 | 4.6666666666666667 |   10
+ tt1740039  | The House of Malik             |   2010 | 5.0000000000000000 |    1
+ tt2338874  | Laiskai Sofijai                |   2010 | 5.0000000000000000 |    2
+ tt4323594  | I'm No Longer Here             |   2010 | 5.0000000000000000 |    3
+ tt5858968  | A Trip to the Moon             |   2010 | 5.0000000000000000 |    4
+ tt6211480  | Under the Smoky Roof           |   2010 | 5.0000000000000000 |    5
+ tt10124714 | A Frenchman                    |   2010 | 4.6666666666666667 |    6
+ tt11811996 | Lion Rock                      |   2010 | 4.6666666666666667 |    7
+ tt1757937  | Yuriko, Dasvidaniya            |   2010 | 4.6666666666666667 |    8
+ tt1836987  | Trishna                        |   2010 | 4.6666666666666667 |    9
+ tt1921085  | Separate Cells                 |   2010 | 4.6666666666666667 |   10
+ tt14066098 | SeaView                        |   2020 | 5.0000000000000000 |    1
+ tt10525194 | Outside California             |   2020 | 4.6666666666666667 |    2
+ tt11182846 | Soul Pursuit                   |   2020 | 4.6666666666666667 |    3
+ tt12065304 | On His Own                     |   2020 | 4.6666666666666667 |    4
+ tt14412532 | The Rapist                     |   2020 | 4.6666666666666667 |    5
+ tt15728808 | At Three                       |   2020 | 4.6666666666666667 |    6
+ tt19717192 | Elegy for A Damned Individual  |   2020 | 4.6666666666666667 |    7
+ tt22000048 | Behind Gates                   |   2020 | 4.6666666666666667 |    8
+ tt23745844 | Das Ka Dhamki                  |   2020 | 4.6666666666666667 |    9
+ tt4077124  | The Farmer                     |   2020 | 4.6666666666666667 |   10
+(50 rows)
+
+Runtime was 23.037525313
+SELECT t.id, t.primary_title, tg.genres, te.season_number, count(*) AS views
+FROM title t
+JOIN titleEpisode te ON te.parent_title_id = t.id
+JOIN title t2 ON t2.id = te.title_id
+JOIN userHistory uh ON uh.title_id = t2.id
+JOIN users u ON u.id = uh.user_id
+JOIN (
+    SELECT tg.title_id, array_agg(g.name) AS genres
+    FROM titleGenre tg
+    JOIN genre g ON g.id = tg.genre_id
+    GROUP BY tg.title_id
+) tg ON tg.title_id = t.id
+WHERE t.title_type = 'tvSeries'
+    AND uh.last_seen BETWEEN NOW() - INTERVAL '30 days' AND NOW()
+    AND te.season_number IS NOT NULL
+    AND u.country_code NOT IN ('US', 'GB')
+GROUP BY t.id, t.primary_title, tg.genres, te.season_number
+ORDER BY count(*) DESC, t.id
+LIMIT 100;
+     id     |          primary_title          |            genres            | season_number | views 
+------------+---------------------------------+------------------------------+---------------+-------
+ tt0058796  | Days of Our Lives               | {Romance,Drama}              |             1 |  1160
+ tt0069658  | The Young and the Restless      | {Romance,Drama}              |             1 |  1082
+ tt0053494  | Coronation Street               | {Romance,Drama}              |             1 |   887
+ tt0988827  | See the World by Train          | {Reality-TV}                 |             1 |   865
+ tt1985601  | Ohayou Tokushima                | {News}                       |             1 |   823
+ tt0363402  | ASAP                            | {Music,Musical}              |             1 |   805
+ tt0344642  | Eat Bulaga                      | {Comedy,Family,Game-Show}    |             1 |   789
+ tt0434733  | Unser Sandmännchen              | {Animation,Comedy,Family}    |             1 |   758
+ tt0088580  | Neighbours                      | {Romance,Drama}              |             1 |   735
+ tt0068069  | Emmerdale Farm                  | {Romance,Drama}              |             1 |   724
+ tt0092325  | The Bold and the Beautiful      | {Romance,Drama}              |             1 |   704
+ tt0439979  | It's Okay to Laugh!             | {Comedy,Talk-Show,Game-Show} |             1 |   675
+ tt0283794  | Six O'Clock News                | {News}                       |             1 |   673
+ tt0484535  | Saksi                           | {News}                       |             1 |   654
+ tt0094481  | Home and Away                   | {Romance,Drama}              |             1 |   629
+ tt0103434  | Gute Zeiten, schlechte Zeiten   | {Romance,Drama,Family}       |             1 |   629
+ tt0048845  | As the World Turns              | {Romance,Drama}              |             1 |   621
+ tt0048860  | The Edge of Night               | {Drama,Crime,Mystery}        |             1 |   621
+ tt2364308  | Bom Dia & Cia                   | {Animation,Comedy,Adventure} |             1 |   587
+ tt0043214  | Love of Life                    | {Romance,Drama}              |             1 |   575
+ tt0108977  | Unter uns                       | {Romance,Drama}              |             1 |   575
+ tt0283767  | One O'Clock News                | {News}                       |             1 |   574
+ tt2235082  | Tritio Matra                    | {Talk-Show}                  |             1 |   553
+ tt0175383  | Barátok közt                    | {Drama,Family}               |             1 |   526
+ tt0056758  | General Hospital                | {Romance,Drama,Crime}        |             1 |   514
+ tt0088550  | Larry King Live                 | {News,Talk-Show}             |             1 |   485
+ tt0057731  | Another World                   | {Romance,Drama}              |             1 |   477
+ tt0065272  | All My Children                 | {Romance,Drama,Mystery}      |             1 |   444
+ tt0065335  | Donahue                         | {Talk-Show}                  |             1 |   429
+ tt0043229  | Search for Tomorrow             | {Romance,Drama}              |             1 |   423
+ tt0194599  | Bobino                          | {Family}                     |             1 |   419
+ tt0046641  | The Secret Storm                | {Romance,Drama}              |             1 |   407
+ tt0108979  | Verbotene Liebe                 | {Romance,Drama}              |             1 |   388
+ tt0112004  | Hollyoaks                       | {Romance,Drama}              |             1 |   385
+ tt0057741  | Crossroads                      | {Drama}                      |             1 |   376
+ tt2383386  | Muvhango                        | {Drama}                      |             1 |   370
+ tt0128176  | Egoli: Place of Gold            | {Romance,Drama}              |             1 |   364
+ tt0185819  | Secret Lives                    | {Drama}                      |             1 |   364
+ tt0062595  | One Life to Live                | {Romance,Drama}              |             1 |   355
+ tt0056752  | The Doctors                     | {Romance,Drama}              |             1 |   349
+ tt0479846  | Storm of Love                   | {Romance}                    |             1 |   349
+ tt17013904 | Home Minister                   | {Game-Show,Reality-TV}       |             1 |   342
+ tt0401937  | Generations                     | {Drama}                      |             1 |   337
+ tt0446224  | Jóban rosszban                  | {Drama}                      |             1 |   337
+ tt8998028  | Abhishekam                      | {Drama}                      |             1 |   336
+ tt0835962  | Alles was zählt                 | {Romance,Drama}              |             1 |   334
+ tt0199249  | Mr. Dressup                     | {Family}                     |             1 |   332
+ tt0853076  | Rote Rosen                      | {Drama}                      |             1 |   331
+ tt0103487  | Marienhof                       | {Drama}                      |             1 |   324
+ tt1448074  | Das perfekte Dinner             | {Reality-TV}                 |             1 |   324
+ tt0044298  | Today                           | {News,Talk-Show}             |             1 |   323
+ tt1086193  | Rhythm City                     | {Drama}                      |             1 |   320
+ tt0439389  | Pierwsza milosc                 | {Romance,Drama}              |             1 |   318
+ tt0236924  | Sazae-san                       | {Animation,Comedy,Drama}     |             1 |   308
+ tt0275133  | The Huntley-Brinkley Report     | {News}                       |             1 |   291
+ tt15463600 | Tukang Ojek Pengkolan           | {Comedy,Drama}               |             1 |   285
+ tt8996230  | Manasu Mamatha                  | {Drama}                      |             1 |   281
+ tt0072559  | Ryan's Hope                     | {Romance,Drama}              |             1 |   278
+ tt1708446  | Taarak Mehta Ka Ooltah Chashmah | {Comedy,Family}              |             1 |   276
+ tt0085049  | Loving                          | {Romance,Drama}              |             1 |   274
+ tt0473428  | Scandal!                        | {Drama}                      |             1 |   273
+ tt7112704  | Yeh Rishta Kya Kehlata Hai      | {Drama}                      |             1 |   269
+ tt12276534 | Cinématon                       | {Documentary}                |             1 |   265
+ tt1338457  | Porta a Porta                   | {News,Talk-Show}             |             1 |   260
+ tt15119410 | Aaj Kamran Khan Kay Sath        | {Talk-Show}                  |             1 |   260
+ tt2053650  | Berlin - Tag & Nacht            | {Drama,Reality-TV}           |             1 |   256
+ tt0402706  | That's Entertainment            | {Musical}                    |             1 |   252
+ tt4476002  | Savdhaan India: Crime Alert     | {Crime}                      |             1 |   251
+ tt8993360  | Aadade Aadharam                 | {Drama}                      |             1 |   250
+ tt0377281  | Los Venegas                     | {Comedy}                     |             1 |   246
+ tt1111847  | Dahoam is Dahoam                | {Drama}                      |             1 |   243
+ tt10405150 | Mangala Gowri Maduve            | {Drama}                      |             1 |   240
+ tt0189265  | The Friendly Giant              | {Fantasy,Music,Family}       |             1 |   238
+ tt0088512  | EastEnders                      | {Romance,Drama,Crime}        |             1 |   237
+ tt0069576  | Doraemon                        | {Animation,Comedy,Adventure} |             1 |   235
+ tt5292408  | Char Divas Sasuche              | {Drama}                      |             1 |   234
+ tt0162076  | Familie                         | {Drama,Family}               |             1 |   233
+ tt1094354  | Barwy szczescia                 | {Romance,Drama}              |             1 |   231
+ tt3827800  | Rasoi Show                      | {Family}                     |             1 |   231
+ tt2609822  | Köln 50667                      | {Drama,Reality-TV}           |             1 |   229
+ tt6558936  | Lords of the Air                | {Comedy}                     |             1 |   229
+ tt0284767  | The Factor                      | {News,Talk-Show}             |             1 |   227
+ tt0083392  | Brookside                       | {Drama}                      |             1 |   226
+ tt8523160  | Beharbari Outpost               | {Comedy}                     |             1 |   225
+ tt0388586  | Cheez TV                        | {Animation,Family}           |             1 |   219
+ tt0086793  | Santa Barbara                   | {Romance,Drama}              |             1 |   207
+ tt1772630  | Radio Rochela                   | {Comedy}                     |             1 |   206
+ tt4885228  | Villa Rosa                      | {Drama}                      |             1 |   201
+ tt0353044  | Le Bébête Show                  | {Comedy}                     |             1 |   199
+ tt2103372  | Child Bride                     | {Drama}                      |             1 |   199
+ tt3911870  | Kumkum Bhagya                   | {Comedy,Romance,Drama}       |             1 |   198
+ tt6296212  | Tooku e ikitai                  | {Documentary}                |             1 |   198
+ tt2360934  | Programa Silvio Santos          | {Music,Talk-Show,Game-Show}  |             1 |   192
+ tt0159879  | Howard Stern                    | {Comedy,Talk-Show}           |             1 |   188
+ tt1847905  | El secreto de Puente Viejo      | {Romance,Drama,Adventure}    |             1 |   186
+ tt0183068  | Family Affairs                  | {Drama}                      |             1 |   185
+ tt0306364  | The News on CNBC                | {News}                       |             1 |   185
+ tt1863997  | Saath Nibhana Saathiya          | {Drama,Family}               |             1 |   182
+ tt0046583  | The Brighter Day                | {Drama}                      |             1 |   181
+ tt3667404  | Swathi Chinukulu                | {Romance}                    |             1 |   178
+(100 rows)
+
+2.sql: 29.298137841
+SELECT n.id,
+    n.primary_name,
+    date_part('year', NOW())::int - n.birth_year AS age,
+    count(*) AS roles
+FROM name n
+JOIN titlePrincipals tp ON tp.name_id = n.id
+JOIN titlePrincipalsCharacters tpc ON tpc.title_id = tp.title_id
+    AND tpc.name_id = tp.name_id
+JOIN category c ON c.id = tp.category_id
+JOIN title t ON t.id = tp.title_id
+LEFT JOIN titleEpisode te ON te.title_id = tp.title_id
+WHERE t.start_year >= date_part('year', NOW())::int - 10
+    AND c.name = 'actress'
+    AND n.death_year IS NULL
+    AND t.title_type IN (
+        'movie', 'tvSeries', 'tvMiniSeries', 'tvMovie'
+    )
+    AND te.title_id IS NULL
+GROUP BY n.id
+ORDER BY roles DESC
+LIMIT 100;
+     id     |       primary_name        | age | roles 
+------------+---------------------------+-----+-------
+ nm11365048 | Cherie Laurent            |     |   138
+ nm1312566  | Kari Wahlgren             |     |   124
+ nm0217221  | Grey Griffin              |  50 |   123
+ nm0722676  | Monica Rial               |  48 |   119
+ nm1868320  | Ashleigh Ball             |  40 |   109
+ nm8673980  | Bimbo Ademoye             |     |   104
+ nm2573928  | Kana Hanazawa             |  34 |   104
+ nm0152839  | Tara Strong               |  50 |   103
+ nm1275101  | Shannon Chan-Kent         |  35 |    99
+ nm4289479  | Mao Ichimichi             |  31 |    93
+ nm2583829  | Cristina Valenzuela       |  36 |    91
+ nm2977461  | Saori Hayami              |  32 |    83
+ nm0319308  | Tabitha St. Germain       |  59 |    82
+ nm4785118  | Ayane Sakura              |  29 |    80
+ nm2932868  | Yôko Hikasa               |  38 |    78
+ nm4438173  | Ai Kayano                 |  36 |    76
+ nm12154510 | Erin Nicole Lundquist     |     |    75
+ nm0473873  | Cherami Leigh             |  35 |    73
+ nm0000407  | Vivica A. Fox             |  59 |    73
+ nm4515899  | Amber Lee Connors         |  32 |    73
+ nm3631965  | Tia Lynn Ballard          |  37 |    72
+ nm2976492  | Aoi Yûki                  |  31 |    72
+ nm0508877  | Andrea Libman             |  39 |    70
+ nm0160049  | Luci Christian            |  50 |    70
+ nm6441957  | Sarah Wiedenheft          |  30 |    69
+ nm1931870  | Brittney Karbowski        |  37 |    66
+ nm0223740  | Jessica DiCicco           |  43 |    65
+ nm4262853  | Mikako Komatsu            |  35 |    64
+ nm2299231  | Kira Buckland             |  36 |    64
+ nm0302502  | Teresa Gallagher          |     |    63
+ nm1883210  | Nao Tôyama                |  31 |    61
+ nm5667822  | Inori Minase              |  28 |    59
+ nm5840379  | Tana Adelana              |     |    58
+ nm4860037  | Sumire Uesaka             |  32 |    58
+ nm3615728  | Rie Takahashi             |  29 |    58
+ nm3148014  | Dawna Lee Heising         |  70 |    57
+ nm5261299  | Dawn M. Bennett           |  31 |    56
+ nm6548466  | Bryn Apprill              |  27 |    55
+ nm0741378  | Felissa Rose              |  54 |    55
+ nm0056532  | Kathleen Barr             |  56 |    54
+ nm1456471  | Kimberly Brooks           |  42 |    54
+ nm1328076  | Miyuki Sawashiro          |  38 |    53
+ nm0419760  | Tara Sands                |     |    52
+ nm5771748  | Estrella Almada Cervantes |     |    52
+ nm1315809  | Stephanie Sheh            |     |    52
+ nm0606422  | Cassandra Lee Morris      |     |    51
+ nm4987686  | Maaya Uchida              |  34 |    51
+ nm5694997  | Toni Thompson             |     |    50
+ nm4111737  | Hisako Kanemoto           |     |    50
+ nm3617620  | Jad Saxton                |  44 |    50
+ nm4808080  | Erika Harlacher           |  33 |    49
+ nm6233871  | Sora Amamiya              |  30 |    49
+ nm5982285  | Siobhan Lumsden           |     |    49
+ nm3470960  | Alexis Tipton             |  34 |    48
+ nm12365054 | Rebecca Danae             |     |    48
+ nm6092929  | Reina Ueda                |     |    47
+ nm2177528  | Kate Micucci              |  43 |    46
+ nm3597590  | Alyson Leigh Rosenfeld    |  36 |    46
+ nm6331955  | Grace-Charis Bassey       |     |    46
+ nm6929994  | Yumiri Hanamori           |  26 |    45
+ nm4184892  | Ruth Kadiri               |     |    45
+ nm0000327  | Lacey Chabert             |  41 |    45
+ nm4134328  | Kasumi Arimura            |  30 |    45
+ nm4131336  | Rachel Alig               |     |    45
+ nm4033859  | Yui Ogura                 |     |    44
+ nm6981978  | Akari Kitô                |  29 |    44
+ nm4535518  | Mindy Robinson            |  43 |    44
+ nm7617524  | Miyu Tomita               |  24 |    44
+ nm1644256  | Debra Rixon               |     |    44
+ nm6506497  | Saori Oonishi             |     |    43
+ nm2971968  | Ayana Taketatsu           |  34 |    43
+ nm1543296  | Eri Kitamura              |  36 |    43
+ nm0828288  | Brinke Stevens            |  69 |    43
+ nm7770751  | Kaede Hondo               |     |    43
+ nm4705505  | Lyubov Aksyonova          |  33 |    43
+ nm2356003  | Rachel Butera             |  51 |    43
+ nm0642601  | Colleen O'Shaughnessey    |  52 |    42
+ nm6949652  | Erica Lindbeck            |  31 |    42
+ nm7118396  | Trina Deuhart             |     |    42
+ nm3351936  | Lindsay Seidel            |  32 |    42
+ nm1069584  | Rie Kugimiya              |  44 |    42
+ nm5157721  | Fuka Koshiba              |  26 |    41
+ nm0606637  | Jessica Morris            |  44 |    41
+ nm4751364  | Megumi Han                |  34 |    41
+ nm1708798  | Caitlin Glass             |  42 |    41
+ nm1521381  | Nayanthara                |  39 |    40
+ nm0280230  | Erin Fitzgerald           |     |    40
+ nm5665571  | Ai Kakuma                 |     |    40
+ nm2999868  | Rina Hidaka               |     |    40
+ nm4439231  | Asami Seto                |  30 |    40
+ nm1489841  | Jamie Marchi              |  46 |    39
+ nm2955927  | Haruka Tomatsu            |  33 |    39
+ nm2766218  | Julie Anne Prescott       |  40 |    39
+ nm2791239  | Toyin Abraham             |     |    39
+ nm1778495  | Shizuka Itô               |  43 |    39
+ nm1690630  | Rebecca Shoichet          |  48 |    38
+ nm0757087  | Maaya Sakamoto            |  43 |    38
+ nm5213224  | Erica Mendez              |  35 |    38
+ nm4177297  | Ijeoma Grace Agu          |     |    38
+ nm4272506  | Paige Chua                |  42 |    37
+(100 rows)
+
+3.sql: 108.355325994

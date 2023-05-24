@@ -199,7 +199,7 @@ public class Workload {
 
         //Foi removido o ordering do select uma vez que nao é necessario
         this.getTitleMainCastAndCrew = c.prepareStatement("""
-            select ordering, n.id, n.primary_name, c.name, pc.name
+            select n.id, n.primary_name, c.name, pc.name
             from titlePrincipals p
             join name n on n.id = p.name_id
             join category c on c.id = p.category_id
@@ -371,7 +371,7 @@ public class Workload {
             }
         };
         if (rs.next()){
-            String titleId = rs.getString(1); //error here
+            String titleId = rs.getString(1);
             
             this.addTitleToUserList.setInt(1, userId);
             this.addTitleToUserList.setString(2, titleId);

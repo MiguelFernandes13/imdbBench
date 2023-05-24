@@ -1,9 +1,12 @@
 #!/bin/bash
-shared_buffers=(1 2 3 4 5 6 7)
-for s in "${shared_buffers[@]}" ; do
-    echo "--------------------Running $s shared_buffers --------------------------"
+export PGPASSWORD=postgres
+psql -U postgres -h localhost -c "ALTER SYSTEM SET shared_buffers TO '4 GB';"
+psql -U postgres -h localhost -c "SELECT pg_reload_conf();"
+work_mem=(4 16 64 256 1024 4096 16384 65536)
+for s in "${work_mem[@]}" ; do
+    echo "--------------------Running $s work_mem --------------------------"
     export PGPASSWORD=postgres
-    psql -U postgres -h localhost -c "ALTER SYSTEM SET shared_buffers TO '$s GB';"
+    psql -U postgres -h localhost -c "ALTER SYSTEM SET work_mem TO '$s MB';"
     psql -U postgres -h localhost -c "SELECT pg_reload_conf();"
     sudo systemctl restart postgresql
 

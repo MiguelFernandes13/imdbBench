@@ -66,6 +66,7 @@ userHistory = spark.read.parquet(f"gs://{BUCKET_NAME}/userhistory.parquet")
 users = spark.read.parquet(f"gs://{BUCKET_NAME}/users.parquet")
 
 
+
 #1.sql
 
 start = time.time()
@@ -74,7 +75,7 @@ rank_window = Window.partitionBy(col("decade")) \
     .orderBy(col("rating_avg").desc(), title["id"])
 
 filteredTitle = title \
-    .filter((title["title_type"] == "movie") & ((floor(title["start_year"] / 10) * 10).cast("int") >= 1980))
+    .filter(((floor(title["start_year"] / 10) * 10).cast("int") >= 1980) & (title["title_type"] == "movie")) \
 
 query1 = filteredTitle \
     .join(titleAkas[titleAkas["region"].isin("US", "GB", "ES", "DE", "FR", "PT")]
@@ -108,80 +109,80 @@ query1.printSchema()
 query1.select("rating_avg").distinct().show()
 
 #2.sql
-#start = time.time()
-#title_filtered = title \
-#        .where(title["title_type"] == "tvSeries") \
-#        .select(title["id"], title["primary_title"]) 
-#
-#userHistory_filtered = userHistory \
-#        .where(userHistory["last_seen"].between(date_sub(current_timestamp(), 30), current_timestamp())) \
-#        .select(userHistory["user_id"], userHistory["title_id"])
-#
-#titleEpisode_filtered = titleEpisode \
-#        .filter(titleEpisode["season_number"].isNotNull()) \
-#        .select(titleEpisode["title_id"], titleEpisode["parent_title_id"],titleEpisode["season_number"])
-#
-#users_filtered = users \
-#        .filter(~users["country_code"].isin("US", "GB")) \
-#        .select(users["id"]) 
-#
-#genre_filtered = genre \
-#        .filter(genre["name"].isin("Drama")) \
-#        .select(genre["id"], genre["name"])
-#
-#titleGenre_filtered = titleGenre \
-#        .join(genre_filtered, genre_filtered["id"] == titleGenre["genre_id"]) \
-#        .groupBy(titleGenre["title_id"]) \
-#        .agg(collect_list(genre_filtered["name"]).alias("genres")) \
-#        .select(titleGenre["title_id"], col("genres"))
-#
-#users_filtered.alias("u") \
-#        .join(userHistory_filtered.alias("uh"), col("u.id") == col("uh.user_id")) \
-#        .join(title.alias("t2"), col("uh.title_id") == col("t2.id")) \
-#        .join(titleEpisode_filtered.alias("te"), col("te.title_id") == col("t2.id")) \
-#        .join(title_filtered.alias("t"), col("te.parent_title_id") == col("t.id")) \
-#        .join(titleGenre_filtered.alias("tg"), col("tg.title_id") == col("t.id")) \
-#        .groupBy(col("t.id"), col("t.primary_title"), col("tg.genres"), col("te.season_number")) \
-#        .agg(count("*").alias("views")) \
-#        .orderBy(col("views").desc(), "t.id") \
-#        .show()
-#       
-#end = time.time()
-#print("2.sql time: ", end - start)
+start = time.time()
+title_filtered = title \
+        .where(title["title_type"] == "tvSeries") \
+        .select(title["id"], title["primary_title"]) 
+
+userHistory_filtered = userHistory \
+        .where(userHistory["last_seen"].between(date_sub(current_timestamp(), 30), current_timestamp())) \
+        .select(userHistory["user_id"], userHistory["title_id"])
+
+titleEpisode_filtered = titleEpisode \
+        .filter(titleEpisode["season_number"].isNotNull()) \
+        .select(titleEpisode["title_id"], titleEpisode["parent_title_id"],titleEpisode["season_number"])
+
+users_filtered = users \
+        .filter(~users["country_code"].isin("US", "GB")) \
+        .select(users["id"]) 
+
+genre_filtered = genre \
+        .filter(genre["name"].isin("Drama")) \
+        .select(genre["id"], genre["name"])
+
+titleGenre_filtered = titleGenre \
+        .join(genre_filtered, genre_filtered["id"] == titleGenre["genre_id"]) \
+        .groupBy(titleGenre["title_id"]) \
+        .agg(collect_list(genre_filtered["name"]).alias("genres")) \
+        .select(titleGenre["title_id"], col("genres"))
+
+users_filtered.alias("u") \
+        .join(userHistory_filtered.alias("uh"), col("u.id") == col("uh.user_id")) \
+        .join(title.alias("t2"), col("uh.title_id") == col("t2.id")) \
+        .join(titleEpisode_filtered.alias("te"), col("te.title_id") == col("t2.id")) \
+        .join(title_filtered.alias("t"), col("te.parent_title_id") == col("t.id")) \
+        .join(titleGenre_filtered.alias("tg"), col("tg.title_id") == col("t.id")) \
+        .groupBy(col("t.id"), col("t.primary_title"), col("tg.genres"), col("te.season_number")) \
+        .agg(count("*").alias("views")) \
+        .orderBy(col("views").desc(), "t.id") \
+        .show()
+       
+end = time.time()
+print("2.sql time: ", end - start)
 #                    
 ##3.sql
-#start = time.time()
-#ten_years = 365 * 10
-#
-#title_filtered = title \
-#        .where(title["start_year"] >= year(date_sub(current_timestamp(), ten_years))) \
-#        .filter(title["title_type"].isin("movie", "tvSeries", "tvMiniSeries", "tvMovie")) \
-#        .select(title["id"]) 
-#
-#category_filtered = category \
-#        .where(category["name"] == "actress") \
-#        .select(category["id"]) 
-#
-#name_filtered = name \
-#        .filter(name["death_year"].isNull()) \
-#        .select(name["id"], name["primary_name"], (year(current_timestamp()) - name["birth_year"]).alias("age"))       
-#        
-#
-#title_filtered.alias("t") \
-#        .join(titlePrincipals.alias("tp"), col("tp.title_id") == col("t.id")) \
-#        .join(category_filtered.alias("c"), col("c.id") == col("tp.category_id")) \
-#        .join(name_filtered.alias("n"), col("n.id") == col("tp.name_id")) \
-#        .join(titleEpisode.alias("te"), col("te.title_id") == col("tp.title_id"), "left") \
-#        .filter(col("te.title_id").isNull()) \
-#        .join(titlePrincipalsCharacters.alias("tpc"), (col("tpc.title_id") == col("tp.title_id")) & (col("tpc.name_id") == col("tp.name_id"))) \
-#        .groupBy(col("n.id"), col("n.primary_name"), col("age")) \
-#        .agg(count("*").alias("roles")) \
-#        .orderBy(col("roles").desc()) \
-#        .limit(100) \
-#        .show()
-#        
-#end = time.time()
-#print("3.sql time: ", end - start)                    
+start = time.time()
+ten_years = 365 * 10
+
+title_filtered = title \
+        .where(title["start_year"] >= year(date_sub(current_timestamp(), ten_years))) \
+        .filter(title["title_type"].isin("movie", "tvSeries", "tvMiniSeries", "tvMovie")) \
+        .select(title["id"]) 
+
+category_filtered = category \
+        .where(category["name"] == "actress") \
+        .select(category["id"]) 
+
+name_filtered = name \
+        .filter(name["death_year"].isNull()) \
+        .select(name["id"], name["primary_name"], (year(current_timestamp()) - name["birth_year"]).alias("age"))       
+        
+
+title_filtered.alias("t") \
+        .join(titlePrincipals.alias("tp"), col("tp.title_id") == col("t.id")) \
+        .join(category_filtered.alias("c"), col("c.id") == col("tp.category_id")) \
+        .join(name_filtered.alias("n"), col("n.id") == col("tp.name_id")) \
+        .join(titleEpisode.alias("te"), col("te.title_id") == col("tp.title_id"), "left") \
+        .filter(col("te.title_id").isNull()) \
+        .join(titlePrincipalsCharacters.alias("tpc"), (col("tpc.title_id") == col("tp.title_id")) & (col("tpc.name_id") == col("tp.name_id"))) \
+        .groupBy(col("n.id"), col("n.primary_name"), col("age")) \
+        .agg(count("*").alias("roles")) \
+        .orderBy(col("roles").desc()) \
+        .limit(100) \
+        .show()
+        
+end = time.time()
+print("3.sql time: ", end - start)                    
 
     
 
