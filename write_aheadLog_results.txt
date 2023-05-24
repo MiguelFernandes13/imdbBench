@@ -1,0 +1,74 @@
+ALTER SYSTEM
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+ALTER SYSTEM
+ALTER SYSTEM
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Running with max_wal_size = 4GB, min_wal_size = 1GB
+Started!
+Response time per function (s)
+------------------------------
+GetWatchListInformation = 0.12362554688859126
+SearchTitles = 0.22005202393400572
+ViewTitle = 0.006863670184553269
+AddNewTitleToList = 0.023769710055797966
+RateTitle = 0.006283797000731529
+
+Overall metrics
+---------------
+throughput (txn/s) = 267.75
+response time (s) = 0.05976689839001307
+abort rate (%) = 0.0
+Running with max_wal_size = 8GB, min_wal_size = 2GB
+ALTER SYSTEM
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+RateTitle = 0.006190849916239316
+AddNewTitleToList = 0.023353778655640575
+SearchTitles = 0.22380349580824385
+ViewTitle = 0.006717776248477717
+GetWatchListInformation = 0.11871588475574205
+
+Overall metrics
+---------------
+throughput (txn/s) = 268.994
+response time (s) = 0.05948024766295159
+abort rate (%) = 0.0
+Running with max_wal_size = 16GB, min_wal_size = 4GB
+ALTER SYSTEM
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+SearchTitles = 0.21918039564747208
+AddNewTitleToList = 0.02594138138544831
+ViewTitle = 0.00691312267087169
+RateTitle = 0.006328357965970611
+GetWatchListInformation = 0.12269986509483798
+
+Overall metrics
+---------------
+throughput (txn/s) = 264.804
+response time (s) = 0.06044183994793885
+abort rate (%) = 0.0

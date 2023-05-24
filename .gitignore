@@ -26,3 +26,4 @@ credentials.json
 **/data/
 *.sql
 transactional/target/transactional-1.0-SNAPSHOT.jar
+imdb.dump

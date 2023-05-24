@@ -2,7 +2,7 @@
 export PGPASSWORD=postgres
 psql -U postgres -h localhost -c "ALTER SYSTEM SET shared_buffers TO '4 GB';"
 psql -U postgres -h localhost -c "SELECT pg_reload_conf();"
-work_mem=(4 16 64 256 1024 4096 16384 65536)
+work_mem=(4 16 64 256 1024 2048 4096 8192 12288)
 for s in "${work_mem[@]}" ; do
     echo "--------------------Running $s work_mem --------------------------"
     export PGPASSWORD=postgres
