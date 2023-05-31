@@ -1,7 +1,7 @@
 #!/bin/bash
 export PGPASSWORD=postgres
 psql -U postgres -h localhost -c "ALTER SYSTEM SET shared_buffers TO '4 GB';"
-psql -U postgres -h localhost -c "ALTER SYSTEM SET work_mem TO '2048 MB';"
+psql -U postgres -h localhost -c "ALTER SYSTEM SET work_mem TO '1024 MB';"
 psql -U postgres -h localhost -c "SELECT pg_reload_conf();"
 
 psql -U postgres -h localhost -c "ALTER SYSTEM SET checkpoint_timeout TO '10min';"

@@ -1,0 +1,112 @@
+ALTER SYSTEM
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+--------------------Running 1 deadlock_timeout --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.026286339058766272
+RateTitle = 0.007281072852484077
+ViewTitle = 0.006561371902473661
+GetWatchListInformation = 0.11218253099044875
+SearchTitles = 0.24079543278710208
+
+Overall metrics
+---------------
+throughput (txn/s) = 262.19
+response time (s) = 0.06101916132140051
+abort rate (%) = 0.0
+--------------------Running 5 deadlock_timeout --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.02684021530634671
+RateTitle = 0.00689279777173913
+ViewTitle = 0.006275687908649373
+GetWatchListInformation = 0.10192224736620034
+SearchTitles = 0.2504034404111618
+
+Overall metrics
+---------------
+throughput (txn/s) = 268.202
+response time (s) = 0.05965599931576946
+abort rate (%) = 7.457065942834132E-4
+--------------------Running 10 deadlock_timeout --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.027746028350737195
+RateTitle = 0.006686859763863093
+GetWatchListInformation = 0.10424611140778445
+ViewTitle = 0.006495419500959693
+SearchTitles = 0.26203077743404696
+
+Overall metrics
+---------------
+throughput (txn/s) = 256.808
+response time (s) = 0.062283416721075666
+abort rate (%) = 0.0
+--------------------Running 30 deadlock_timeout --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+ViewTitle = 0.006278571423008284
+AddNewTitleToList = 0.02815409231377505
+RateTitle = 0.006590897842092092
+SearchTitles = 0.25389129932003807
+GetWatchListInformation = 0.10210578733446803
+
+Overall metrics
+---------------
+throughput (txn/s) = 265.346
+response time (s) = 0.060297098175567
+abort rate (%) = 7.537328619990503E-4
+--------------------Running 60 deadlock_timeout --------------------------
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.028969729059637375
+RateTitle = 0.0065746492489927475
+SearchTitles = 0.26903080773736776
+ViewTitle = 0.006401369170592504
+GetWatchListInformation = 0.10388583901149426
+
+Overall metrics
+---------------
+throughput (txn/s) = 253.982
+response time (s) = 0.06300827167931586
+abort rate (%) = 0.0
