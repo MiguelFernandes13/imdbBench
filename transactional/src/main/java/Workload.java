@@ -126,7 +126,7 @@ public class Workload {
         //create index on userhistory using btree(last_seen, title_id); melhorou
         //por causa do index only scan backward
         //create index on userhistory using btree(last_seen desc, title_id); obteve o melhor resultado
-        //user_id = '100000'
+        //t_.user_id = '100000'
         this.getTitleFromPopular = c.prepareStatement("""
             select title_id
             from (
@@ -199,7 +199,7 @@ public class Workload {
 
         //Foi removido o ordering do select uma vez que nao é necessario
         this.getTitleMainCastAndCrew = c.prepareStatement("""
-            select ordering, n.id, n.primary_name, c.name, pc.name
+            select n.id, n.primary_name, c.name, pc.name
             from titlePrincipals p
             join name n on n.id = p.name_id
             join category c on c.id = p.category_id
@@ -331,21 +331,22 @@ public class Workload {
 
         /* searchTitles */
         //create materialized view titleBetween1980And2023 as select id, title_type, primary_title from title where start_year between 1980 and 2023;
+        //seria necessario criar um trigger para quando fosse adicionar um filme entre 1980 e 2023 esta vista ser atualizada
         //? = 'north'
-        //this.searchTitleByName = c.prepareStatement("""
-        //    select id, title_type, primary_title
-        //    from title
-        //    where to_tsvector('english', primary_title) @@ to_tsquery('english', ?)
-        //        and start_year between 1980 and 2023
-        //    limit 20;
-        //""");
-        //new query
         this.searchTitleByName = c.prepareStatement("""
             select id, title_type, primary_title
-            from titleBetween1980And2023
+            from title
             where to_tsvector('english', primary_title) @@ to_tsquery('english', ?)
+                and start_year between 1980 and 2023
             limit 20;
         """);
+        //new query
+        //this.searchTitleByName = c.prepareStatement("""
+        //    select id, title_type, primary_title
+        //    from titleBetween1980And2023
+        //    where to_tsvector('english', primary_title) @@ to_tsquery('english', ?)
+        //    limit 20;
+        //""");
     }
 
 
@@ -370,13 +371,14 @@ public class Workload {
                 yield this.getTitleFromPopular.executeQuery();
             }
         };
-        rs.next();
-        String titleId = rs.getString(1); //error here
-
-        this.addTitleToUserList.setInt(1, userId);
-        this.addTitleToUserList.setString(2, titleId);
-        this.addTitleToUserList.executeUpdate();
-        this.conn.commit();
+        if (rs.next()){
+            String titleId = rs.getString(1);
+            
+            this.addTitleToUserList.setInt(1, userId);
+            this.addTitleToUserList.setString(2, titleId);
+            this.addTitleToUserList.executeUpdate();
+            this.conn.commit();
+        }
     }
 
 

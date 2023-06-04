@@ -1,0 +1,105 @@
+Running 1 clients
+Started!
+Response time per function (s)
+------------------------------
+GetWatchListInformation = 0.17286358639387756
+RateTitle = 0.006614730615942029
+AddNewTitleToList = 0.018994095389206867
+ViewTitle = 0.008333221249402771
+SearchTitles = 0.1394507616043956
+
+Overall metrics
+---------------
+throughput (txn/s) = 16.903333333333332
+response time (s) = 0.05912453034293039
+abort rate (%) = 0.0
+Running 2 clients
+Started!
+Response time per function (s)
+------------------------------
+GetWatchListInformation = 0.16073402028901462
+RateTitle = 0.006323767885802469
+ViewTitle = 0.006737066939759036
+AddNewTitleToList = 0.014290568318731118
+SearchTitles = 0.1422000239200299
+
+Overall metrics
+---------------
+throughput (txn/s) = 35.82333333333333
+response time (s) = 0.05584330470391737
+abort rate (%) = 0.0
+Running 4 clients
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.011554605876654958
+SearchTitles = 0.15724909957479224
+GetWatchListInformation = 0.08229193520615227
+RateTitle = 0.005413306994331066
+ViewTitle = 0.004912828230925565
+
+Overall metrics
+---------------
+throughput (txn/s) = 98.62333333333333
+response time (s) = 0.04056485328911346
+abort rate (%) = 0.0
+Running 8 clients
+Started!
+Response time per function (s)
+------------------------------
+RateTitle = 0.0043546632267912775
+AddNewTitleToList = 0.012873334994988743
+ViewTitle = 0.0038748761139891655
+SearchTitles = 0.22799495129733888
+GetWatchListInformation = 0.05807709468084724
+
+Overall metrics
+---------------
+throughput (txn/s) = 183.28
+response time (s) = 0.04362454086532446
+abort rate (%) = 0.0
+Running 12 clients
+Started!
+Response time per function (s)
+------------------------------
+RateTitle = 0.005612090056207535
+ViewTitle = 0.006366107593119539
+GetWatchListInformation = 0.08569558412944393
+SearchTitles = 0.32725081307008
+AddNewTitleToList = 0.024970266218005042
+
+Overall metrics
+---------------
+throughput (txn/s) = 183.18333333333334
+response time (s) = 0.0655404636126831
+abort rate (%) = 0.0018196706396142299
+Running 16 clients
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.03472136668434146
+GetWatchListInformation = 0.09898650189302938
+ViewTitle = 0.006864629262455127
+RateTitle = 0.0060813261242672915
+SearchTitles = 0.44943756587378786
+
+Overall metrics
+---------------
+throughput (txn/s) = 189.08333333333334
+response time (s) = 0.08456928285597179
+abort rate (%) = 0.0
+Running 20 clients
+Started!
+Response time per function (s)
+------------------------------
+AddNewTitleToList = 0.05348954280181157
+GetWatchListInformation = 0.14985574338513313
+SearchTitles = 0.5784660301800576
+RateTitle = 0.006865893338215712
+ViewTitle = 0.008004571619176493
+
+Overall metrics
+---------------
+throughput (txn/s) = 171.54333333333332
+response time (s) = 0.11649597819895847
+abort rate (%) = 0.0019431436177447874
